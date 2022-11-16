@@ -109,8 +109,8 @@
                 <!-- Tags -->
                 <div class="row">
                     <div class="col">
-                        {% for tag in best_items.popular_tags %}
-                            <a href="{% url 'tag' tag_id=tag.tag_id %}" class="tag">{{ tag.text }} </a>
+                        {% for tag in best_items.tags %}
+                            <a href="{% url 'tag' tag_id=tag.id %}" class="tag">{{ tag.title }} </a>
                         {% endfor %}
 
                     </div>
@@ -121,10 +121,10 @@
                         <span class="fs-2 pe-5">Best members</span>
                     </div>
                     <div class="col">
-                        {% for user in best_items.best_users %}
+                        {% for profile in best_items.profiles %}
                             <div class="m-3">
                                 <img src="{% static "img/common_avatar.png" %}" alt="Avatar" width="50">
-                                <a href="#" class="member-miniature"> {{ user }} </a>
+                                <a href="#" class="member-miniature"> {{ profile.username }} </a>
                             </div>
                         {% endfor %}
                     </div>

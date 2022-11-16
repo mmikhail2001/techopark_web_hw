@@ -11,7 +11,7 @@
             <div class="col-2 text-end">
                 <form class="mb-1">
                     <input type="hidden">
-                    <button class="fs-3 button-likes" type="submit">21</button>
+                    <button class="fs-3 button-likes" type="submit">{{ question.count_likes }}</button>
                 </form>
             </div>
 
@@ -34,7 +34,18 @@
                     </div>
                 </div>
             </div>
-
+        </div>
+        <div class="row m-2 mx-4">
+            <div class='col-8'> </div>
+            <div class="col-4">
+                <img src="../static/img/common_avatar.png" class="avatar" alt="Avatar" width="50"
+                    height="50">
+                <a href="#" class="member-miniature">{{question.author}}</a>
+            </div>
+            {% comment %} <div class='col-3'>
+                <a class="author-panel" href="#"> {{  question.author }}</a>
+                
+            </div> {% endcomment %}
         </div>
     </div>
 </div>

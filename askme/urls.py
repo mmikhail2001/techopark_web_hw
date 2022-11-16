@@ -17,11 +17,15 @@ from django.contrib import admin
 from django.urls import path
 from app import views
 
+from askme import settings
+from django.conf.urls.static import static
+
 # обработчики путей (функции в views.py )= views.index, views.question
 # name='question' - имя обработчика (можем использовать в шаблонах)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('hot', views.hot, name='hot'),
     path('question/<int:question_id>', views.question, name='question'),
     path('ask', views.ask, name='ask'),
     path('login', views.login, name='login'),
@@ -29,3 +33,7 @@ urlpatterns = [
     path('settings', views.settings, name='settings'),
     path('tag/<int:tag_id>', views.tag, name='tag'),
 ]
+
+if settings.DEBUG:
+    # маршрут для статических файлов в режиме отладки
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

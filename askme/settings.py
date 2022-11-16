@@ -79,8 +79,11 @@ WSGI_APPLICATION = 'askme.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            # 'read_default_file': BASE_DIR / 'my.cnf',
+            'read_default_file': os.path.join(BASE_DIR, 'my.cnf'),
+        },
     }
 }
 
@@ -113,7 +116,12 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_L10N = True
+# для отображения даты и времени
+DATETIME_FORMAT = '%Y-%m-%d %H:%M'
+
+USE_L10N = False
+
+# USE_L10N = True
 
 USE_TZ = True
 
@@ -127,3 +135,6 @@ STATICFILES_DIRS = [
     # os.path.join(str(BASE_DIR), "static")
     BASE_DIR / "static",
 ]
+
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'

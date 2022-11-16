@@ -2,3 +2,4 @@
 sem3.txt
 *.pyc
 *__pycache__*
+my.cnf
