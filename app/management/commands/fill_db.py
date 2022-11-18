@@ -3,10 +3,22 @@ import random
 
 from django.core.management.base import BaseCommand, CommandError
 from faker import Faker
-
+from math import ceil
+import time
+import datetime
 from app import models
 
+'''
+Некоторые замечания
+1. 
+    - random.choise работает с QuerySet
+    - random.sample не работет с QuerySet (только List)
+2. Пользователи заполняются, начиная с pk = 2, т.к. pk = 1 для админа mikhail
+3. Скрипт для заполнения записями ПУСТОЙ БД (за исключением записи в User - админа mikhail) 
+'''
 
+
+# требование к заполнению - изначально база пустая
 class Command(BaseCommand):
     help = 'Command to do........'
     fake = Faker()
@@ -17,80 +29,109 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         try:
             ratio = kwargs["ratio"]
-            print("filling...")
-            # self.fill_tags(ratio * 1)
-            # self.fill_users(ratio * 1)
-            # self.fill_answers(ratio * 100)
-            # self.fill_likes(ratio * 200)
-            self.fill_tags(ratio * 3)
-            self.fill_users(ratio * 3)
+            print("Filling...")
+            start_time = datetime.datetime.now()
+            self.fill_tags(ratio * 1)
+            self.fill_users(ratio * 1)
             self.fill_questions(ratio * 10)
-            self.fill_answers(ratio * 30)
-            self.fill_likes(ratio * 100)
-            print("finish of filling!")
+            self.fill_answers(ratio * 100)
+            self.fill_likes(ratio * 200)
+            print("End of filling!")
+            print('Total time: {}'.format(datetime.datetime.now() - start_time))
 
         except Exception as e:
-            print("e")
+            print("Exception")
             CommandError(repr(e))
             
     # 1
     def fill_tags(self, n):
+        start_time = datetime.datetime.now()
+        
         tags = []
-        for i in range(n):
-            tags.append(models.Tag(title=f'tag{i + 20}'))
+        for i in range(1, n + 1):
+            tags.append(models.Tag(id = i, title=f'tag{i}'))
         models.Tag.objects.bulk_create(tags)
+        
+        print('Duration fill_tags: {}'.format(datetime.datetime.now() - start_time))
     
-    # 1 
+    # 1
     def fill_users(self, n):
+        start_time = datetime.datetime.now()
+        
         profiles = []
         users = []
-        start_pk_new_users =  max([u.pk for u in models.User.objects.all()]) + 1
-        user_first = models.User(username=f'username{0}', password='1Q2w3e4r5t_')
-        user_first.save()
-        pk_user_first = user_first.pk
-        for i in range(n)[1:]:
-            users.append(models.User(username=f'username{i}', password='1Q2w3e4r5t_'))
+        for i in range(1, n + 1):
+            users.append(models.User(id = i, username=f'username{i}', password='1Q2w3e4r5t_'))
         models.User.objects.bulk_create(users)
-        for id in range(n):
-            user_id = id + pk_user_first
-            profiles.append(models.Profile(user_id=user_id))
-        models.Profile.objects.bulk_create(profiles)
+        for i in range(1, n + 1):
             
-    
-    # почему теги можно добавлять только к сохраненным вопросам?
+            profiles.append(models.Profile(id = i, user_id=i))
+        models.Profile.objects.bulk_create(profiles)
+        
+        print('Duration fill_users: {}'.format(datetime.datetime.now() - start_time))
+      
     # 10
     def fill_questions(self, n):
+        start_time = datetime.datetime.now()
+        
         questions = []
-        count_questions_before =  models.Question.objects.all().count()
-        for i in range(n):
-            author = random.choice(models.Profile.objects.all())
+        profiles = models.Profile.objects.all();
+        for i in range(1, n + 1):
+            author = random.choice(profiles)
             questions.append(models.Question(
+                id = i,
                 title = f'Question tittle {i}', 
                 text = f'How can I drink {i} liters of milk?', 
                 author = author, 
-                date = self.fake.date_time_between(start_date='-5y', end_date='now')
+                date = self.fake.date_time_between(start_date='-5y', end_date='now', tzinfo=datetime.timezone.utc)
                 ))
         models.Question.objects.bulk_create(questions)
         
-        for q in models.Question.objects.all()[count_questions_before : ]:
-            list_random_tags = random.sample(list(models.Tag.objects.all()), random.randint(1, 10))
-            q.tags.set(list_random_tags)
+        list_tags = list(models.Tag.objects.all())
+        for q in models.Question.objects.all():
+            # от 1 до 10 тегов на вопрос
+            list_random_tags = random.sample(list_tags, random.randint(1, 10))
+            # вроде, add эффективнее, чем set
+            q.tags.add(*list_random_tags)
+        
+        print('Duration fill_questions: {}'.format(datetime.datetime.now() - start_time))
 
     # 100
     def fill_answers(self, n):
+        start_time = datetime.datetime.now()
+        
         answers = []
-        for i in range(n):
+        authors = models.Profile.objects.all()
+        questions = models.Question.objects.all()
+        for i in range(1, n + 1):
             answers.append(models.Answer(
+                id = i,
                 text = f'Answer text number {i}',
-                date = self.fake.date_time_between(start_date='-5y', end_date='now'),
+                date = self.fake.date_time_between(start_date='-5y', end_date='now', tzinfo=datetime.timezone.utc),
                 is_correct = False,
-                author = random.choice(models.Profile.objects.all()),
-                question = random.choice(models.Question.objects.all()),
+                author = random.choice(authors),
+                question = random.choice(questions),
                 ))
         models.Answer.objects.bulk_create(answers)
+        
+        print('Duration fill_answers: {}'.format(datetime.datetime.now() - start_time))
+
     # 200
     def fill_likes(self, n):
-        for i in range(n):
-            q = random.choice(models.Question.objects.all())
-            p = random.choice(models.Profile.objects.all())
-            q.likes.add(p)
+        start_time = datetime.datetime.now()
+        
+        # Для избежания поиска неуникального лайка на каждой итерации цикла ...
+        # ... определим фиксированное количество лайков для каждого пользователя
+        likes = []
+        count_likes_for_user = ceil(n / models.Profile.objects.all().count())
+        profiles = models.Profile.objects.all()
+        list_questions = list(models.Question.objects.all())
+        i = 1
+        for p in profiles:
+            qs = random.sample(list_questions, count_likes_for_user)
+            for q in qs:
+                likes.append(models.Like(id = i, question = q, author = p))
+                i += 1
+        models.Like.objects.bulk_create(likes)
+        likes = []        
+        print('Duration fill_likes: {}'.format(datetime.datetime.now() - start_time))

@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from app import views
 
 from askme import settings
@@ -22,16 +22,10 @@ from django.conf.urls.static import static
 
 # обработчики путей (функции в views.py )= views.index, views.question
 # name='question' - имя обработчика (можем использовать в шаблонах)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='index'),
-    path('hot', views.hot, name='hot'),
-    path('question/<int:question_id>', views.question, name='question'),
-    path('ask', views.ask, name='ask'),
-    path('login', views.login, name='login'),
-    path('register', views.register, name='register'),
-    path('settings', views.settings, name='settings'),
-    path('tag/<int:tag_id>', views.tag, name='tag'),
+    path('', include('app.urls'))
 ]
 
 if settings.DEBUG:

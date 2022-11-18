@@ -1,3 +1,5 @@
+{% load app_filters %}
+
 <div class="card mb-2">
     <!-- Question -->
     <div class="card-header  fs-4 text-left">
@@ -11,7 +13,7 @@
             <div class="col-2 text-end">
                 <form class="mb-1">
                     <input type="hidden">
-                    <button class="fs-3 button-likes" type="submit">{{ question.count_likes }}</button>
+                    <button class="fs-3 button-likes" type="submit">{{ question.like_set.all.count }}</button>
                 </form>
             </div>
 
@@ -19,33 +21,30 @@
             <div class="col-10">
                 <!-- Text -->
                 <div class="row p-1">
-                    {{ question.text }}
+                    {{ question.text }} {% lorem 100 w random %}
                 </div>
                 <div class="row mt-3">
                     <!-- Tags -->
                     <div class="col-3">
-                        <a class="answers-counter" href="{% url 'question' question_id=question.id %}">{{ question.answers|length }} Answers</a>
+                        {% comment %} <a class="answers-counter" href="{% url 'question' question_id=question.id %}">{{ question.answers|length }} Answers</a> {% endcomment %}
+                        <a class="answers-counter" href="{% url 'question' question_id=question.id %}">{{ question.answer_set.all.count }} Answers</a>
                     </div>
                     <div class="col-9">
 
-                        {% for tag in question.tags %}
-                            <a href="{% url 'tag' tag_id=tag.tag_id%}" class="tag">{{ tag.text }}</a>
+                        {% for tag in question.tags.all %}
+                            <a href="{% url 'tag' tag_id=tag.id%}" class="tag">{{ tag.title }}</a>
                         {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
         <div class="row m-2 mx-4">
-            <div class='col-8'> </div>
-            <div class="col-4">
-                <img src="../static/img/common_avatar.png" class="avatar" alt="Avatar" width="50"
+                <div class="text-end mt-3">
+                    <img src="../static/img/common_avatar.png" alt="Avatar" width="50"
                     height="50">
-                <a href="#" class="member-miniature">{{question.author}}</a>
-            </div>
-            {% comment %} <div class='col-3'>
-                <a class="author-panel" href="#"> {{  question.author }}</a>
-                
-            </div> {% endcomment %}
+                <a href="#" class="member-miniature"><strong>{{question.author.user.username}}</strong></a>
+                    asked {{ question.date|convert_date }} ago 
+                </div>
         </div>
     </div>
 </div>

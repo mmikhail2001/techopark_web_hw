@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import User
 import random
@@ -6,32 +7,25 @@ from django.db.models import Count
 class QuestionManager(models.Manager):
     def get_new_questions(self):
         return self.order_by('-date')
+    
     def get_hot_questions(self):
-        # добавляем "служебное поле"
-        q = self.annotate(Count('likes'))
-        q_sort_by_likes = q.order_by('-likes__count')
+        q_sort_by_likes = self.annotate(Count('like')).order_by('-like__count')
         return q_sort_by_likes
-    def get_single_question(self, idx):
-        return self.get(id=idx)
+    
     def get_questions_by_tag(self, idx):
         return self.filter(tags__id=idx)
     
     
 class TagManager(models.Manager):
     def get_popular_tags(self):
-        t = self.annotate(Count('question'))
-        t_sort_by_usage = t.order_by('-question__count')
+        t_sort_by_usage = self.annotate(Count('question')).order_by('-question__count')
         return t_sort_by_usage
-    def get_single_tag(self, idx):
-        return self.get(id=idx)
     
 class ProfileManager(models.Manager):
     def get_best_profiles(self):
-        p = self.annotate(Count('question'))
-        p_sort_by_questions = p.order_by('-question__count')
+        p_sort_by_questions = self.annotate(Count('question')).order_by('-question__count')
         return p_sort_by_questions
-    def get_single_profile(self, idx):
-        return self.get(id=idx)
+
     
 
 # user's pass: 1Q2w3e4r5t_
@@ -57,11 +51,9 @@ class Tag(models.Model):
 class Question(models.Model):
     title       = models.CharField(max_length=200)
     text        = models.TextField(blank=True, null=True)
-    # default=timezone.now
     date        = models.DateTimeField() #auto_now_add=True
     author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
     tags        = models.ManyToManyField(Tag)
-    likes       = models.ManyToManyField(Profile, related_name='related_likes')
     
     objects = QuestionManager()
     
@@ -78,5 +70,13 @@ class Answer(models.Model):
     
     def __str__(self):
         return f'Answer #{self.pk}. {self.text[:10]}'
-                                                                 
-# Create your models here.
+    
+class Like(models.Model):
+    question    = models.ForeignKey(Question, on_delete=models.CASCADE)
+    author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('question', 'author')
+    
+    def __str__(self):
+        return f'Like: {self.author.user.username} -> {self.question.title}'
+                                                                
