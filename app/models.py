@@ -51,7 +51,7 @@ class Tag(models.Model):
 class Question(models.Model):
     title       = models.CharField(max_length=200)
     text        = models.TextField(blank=True, null=True)
-    date        = models.DateTimeField() #auto_now_add=True
+    date        = models.DateTimeField(auto_now_add=True) #auto_now_add=True
     author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
     tags        = models.ManyToManyField(Tag)
     
@@ -63,7 +63,7 @@ class Question(models.Model):
 
 class Answer(models.Model):
     text        = models.TextField()
-    date        = models.DateTimeField() # auto_now_add=True
+    date        = models.DateTimeField(auto_now_add=True) # auto_now_add=True
     is_correct  = models.BooleanField(default=False)
     author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
     question    = models.ForeignKey(Question, on_delete=models.CASCADE)

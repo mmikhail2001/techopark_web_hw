@@ -46,13 +46,12 @@
                 <div class="d-flex">
                     
                     <!-- Name section -->
-                    {% comment %} <h1> hello </h1> {% endcomment %}
-                    {% if is_auth %}
+                    {% if request.user.is_authenticated %}
                     <img src="{% static "img/common_avatar.png" %}" alt="Avatar" width="70" height="70">
                     <div class="container">
                         <div class="row">
                             <div class="col">
-                                <span> Name Surname </span>
+                                <span> {{ request.user.username }} </span>
                             </div>
                         </div>
 
@@ -69,7 +68,7 @@
                             
                             <div class="col">
                                 <form method="get" action="#">
-                                    <a class="link-secondary"> Log out </a>
+                                    <a href="{% url 'logout' %}" class="link-secondary">Log out</a>
                                 </form>
                             </div>
                         </div>
@@ -77,14 +76,12 @@
                     {% else %}
 
                         <div class="col">
-                            <a href="{% url 'login' %}" class="link-secondary fs-6 px-2"> Log in </a>
+                            <a href="{% url 'login' %}" class="link-secondary fs-6 px-2">Log in</a>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-
-
     </nav>
 </header>
 
