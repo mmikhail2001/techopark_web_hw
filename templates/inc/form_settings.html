@@ -7,7 +7,7 @@
 {% bootstrap_messages %}
 
 
-<form novalidate action="{% url 'settings' %}" method="post" class="form">
+<form action="{% url 'settings' %}" method="post" class="form">
     {% csrf_token %}
     {% bootstrap_form form %}
     {% buttons %}

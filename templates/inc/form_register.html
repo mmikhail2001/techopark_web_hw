@@ -7,73 +7,10 @@
 {% bootstrap_messages %}
 
 
-<form novalidate action="{% url 'register' %}" method="post" class="form">
+<form action="{% url 'register' %}" method="post" class="form">
     {% csrf_token %}
     {% bootstrap_form form %}
     {% buttons %}
         <button type="submit" class="my-3 btn btn-primary">Register</button>
     {% endbuttons %}
 </form> 
-
-{% comment %} ------------------------------------------------------------------- {% endcomment %}
-{% comment %} 
-{% for e in form.non_field_errors %}
-    <div class="alert alert-danger">{{ e }}</div>
-{% endfor %}
-
-<form class="form" method="post" action="{% url 'register' %}">
-    {% for field in form %}
-        <div class="mb-3 
-            {% if field.errors %}is-invalid{% else %} is-valid {% endif %}">
-                <label class="form-label">{{ field.label }}</label>
-            <div class="form-control">{{ field }}</div>
-        </div>
-    {% endfor %}
-        <div class="form-actions">
-        <button type="submit" class="btn btn-primary">
-        Сохранить</button>
-    </div>
-</form> {% endcomment %}
-
-{% comment %} ------------------------------------------------------------------- {% endcomment %}
-
-{% comment %} <form class="w-75"> {% endcomment %}
-    {% comment %} <div class="mb-3">
-        <label for="Login" class="form-label" name="username">Username</label>
-        <input type="text" class="form-control" id="Login">
-    </div>
-
-    <div class="mb-3">
-        <label name="email" for="exampleFormControlInput1" class="form-label">Email address</label>
-        <input type="email" class="form-control" id="exampleFormControlInput1"
-               placeholder="name@example.com">
-    </div>
-
-    <div class="mb-3">
-        <label name="first_name" for="Nick" class="form-label">First Name</label>
-        <input type="text" class="form-control" id="Nick">
-    </div>
-
-    <div class="mb-3">
-        <label name="last_name" for="Nick" class="form-label">Last Name</label>
-        <input type="text" class="form-control" id="Nick">
-    </div>
-
-
-    <div class="mb-3">
-        <label name="password" for="Password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="Password">
-    </div>
-
-    <div class="mb-3">
-        <label name="password_check" for="Password" class="form-label">Repeat password</label>
-        <input type="password" class="form-control" id="Password">
-    </div>
-
-    <div class="mb-3">
-        <label for="Avatar" class="form-label">Avatar</label>
-        <input class="form-control" type="file" id="Avatar">
-    </div> {% endcomment %}
-
-    {% comment %} <button type="submit" class="my-3 btn btn-primary">Register</button>
-</form> {% endcomment %}

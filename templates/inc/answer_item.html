@@ -1,9 +1,11 @@
+{% load app_filters %}
+
 <div class="card mt-2">
     <!-- Question -->
     <div class="card-body">
         <div class="row">
             <div class="col ps-4">
-                <div class="row p-1">
+                <div class="row p-1" id="{{ answer.id }}">
                     <p>
                         {{ answer.text }}
                     </p>
@@ -18,11 +20,13 @@
                             {% endif %}
                         </form>
                     </div>
-                    <!-- User's information -->
-                    <div class="col-4">
+                </div>
+                <div class="row m-2 mx-4">
+                    <div class="text-end mt-3">
                         <img src="../static/img/common_avatar.png" alt="Avatar" width="50"
-                            height="50">
-                        <a href="#" class="member-miniature">{{answer.author.user.username }}</a>
+                        height="50">
+                    <a href="#" class="member-miniature"><strong>{{answer.author.user.username}}</strong></a>
+                        answered {{ answer.date|convert_date }} ago 
                     </div>
                 </div>
             </div>

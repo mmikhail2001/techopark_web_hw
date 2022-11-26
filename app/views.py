@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from django.forms import model_to_dict
 from django.shortcuts import redirect, render
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 from django.core.paginator import Paginator
@@ -15,18 +15,32 @@ from django.contrib import auth
 
 
 '''
-    Задачи
-    - Логин создает юзера, а нужно профиль
-        - аватарка
-    - В settings добавить аватарку
-    - textArea вопроса слишком большой
-    - декомпозировать контроллеры
-    - get_shared_context не нужен
-    - проверить частные случаи
-    - определить поля, обязательные для заполнения
-    - теги без запятой?
-    - проверить выполнение всех задач с гитхаба (не все выполнены)
-        - contunue например
+    Задачи 1
+    + Логин создает юзера, а нужно профиль
+    - аватарка
+    + В settings добавить аватарку
+    + textArea вопроса слишком большой
+    + декомпозировать контроллеры
+    + get_shared_context не нужен
+    + проверить частные случаи
+        + если, находясь на странице настроек, нажать log out - попадаешь на log in
+        + неавторизованный пользователь при отправке ответа на вопрос попадет на log in
+        + скролл к ответу реализована через якоря (атрибут id = id ответа)
+        + после регистрации пользователь попадает на страницу вопросов
+    + определить поля, обязательные для заполнения
+    + включить validate
+    + теги без запятой?
+    + проверить выполнение всех задач с гитхаба (не все выполнены)
+    - добавить лайк на ответ (сортировка ответов по рейтингу)
+    
+    Задачи 2
+    - аватарка
+    - лайк к ответу
+    - сортировка ответом по лайкам, при равном количестве лайков по дате
+    - пагинация при одной странице должна отсутсвовать
+    - секунды, прошедшие с момента отправки ответа или вопроса, не должна содержать десятые доли
+        - 4.34 ago, 6.4 ago (либо две цифры после точки, либо одна)
+        - нужно пофиксить 
 '''
 
 COUNT_BEST_ITEMS = 10
@@ -36,9 +50,6 @@ def paginate(objects_list, request, per_page = 5):
     paginator = Paginator(contact_list, per_page)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    print(page)
-    print(type(page))
-    print(page.object_list)
     return page
 
 def get_best_items():
@@ -48,38 +59,53 @@ def get_best_items():
     }
     return best_items
 
-def get_shared_context():
-    return {
-        'best_items'    : get_best_items()
-    }
-    
+def get_response_404():
+    return HttpResponseNotFound('<h1>Page not found</h1>')
+
+def add_tags_to_question(tags, question):
+    for tag_title in tags.split(','):
+        tag = models.Tag(title = tag_title)
+        try:
+            tag.save()
+            question.tags.add(tag)
+        except IntegrityError:
+            pass
+
+def get_num_page_by_id(paginator, id):
+    for i in paginator.page_range:
+        entities  = paginator.page(i).object_list
+        for entity in entities.all():
+            if entity.id == id:
+                return i 
+    return None
+
 
 def index(request):
     questions = models.Question.objects.get_new_questions()
     page = paginate(questions, request)
-    context = get_shared_context()
-    context['page'] = page
-    context['is_hot'] = False
+    context = { 'best_items' : get_best_items(), 'page' : page, 'is_hot' : False }
     return render(request, "index.html", context=context)
+
 
 def hot(request):
     hot_questions = models.Question.objects.get_hot_questions()
     page = paginate(hot_questions, request)
-    context = get_shared_context()
-    context['page'] = page
-    context['is_hot'] = True
+    context = { 'best_items' : get_best_items(), 'page' : page, 'is_hot' : True }
     return render(request, "hot.html", context=context)
 
+
 def question(request, question_id : int):
-    needed_question = models.Question.objects.filter(pk=question_id)
-    if not needed_question.exists():
-        return HttpResponseNotFound('<h1>Page not found</h1>')
-    needed_question = needed_question[0]
-    answers = needed_question.answer_set.all().order_by('-date')
-    page = paginate(answers, request)
+    needed_question = models.Question.objects.filter(pk=question_id).first()
+    
+    if not needed_question:
+        return get_response_404()
+
     if request.method == 'GET':
         answer_form = forms.AnswerForm()
     elif request.method == 'POST':
+        # неавторизированный пользователь не может отвечать на вопрос
+        if not request.user.is_authenticated:
+            return redirect("login")
         answer_form = forms.AnswerForm(request.POST)
         if answer_form.is_valid():
             answer = answer_form.save(commit = False)
@@ -89,16 +115,23 @@ def question(request, question_id : int):
 
             answer.question = needed_question
             answer.save()
-            # обновление страницы, чтобы появился ответ
-            return redirect(request.META['HTTP_REFERER'])
+            answer_id = answer.id
             
+            # дублирование, т.к. при GET запросе новый ответ не добавляется
+            answers = needed_question.answer_set.all().order_by('date')
+            page = paginate(answers, request)
             
-    context = get_shared_context()
-    context['question'] = needed_question
-    context['page'] = page
-    context['form'] = answer_form
+            # получаем номер страницы, на которой разместился новый вопрос
+            num_page = get_num_page_by_id(page.paginator, answer_id)
+            # скроллинг по якорю: <div id="{{answer_id"}}"> </div>
+            return redirect(reverse("question", args = [question_id]) + f'?page={num_page}#{answer_id}')
+
+    answers = needed_question.answer_set.all().order_by('date')
+    page = paginate(answers, request)
+    context = { 'best_items' : get_best_items(), 'page' : page, 'question' : needed_question, 'form' : answer_form }
     return render(request, "question.html", context=context)
 
+@login_required
 def ask(request):
     if request.method == 'GET':
         ask_form = forms.AskForm()
@@ -110,20 +143,19 @@ def ask(request):
             user = models.User.objects.get(username = request.user)
             question.author = models.Profile.objects.get(user = user)
             question.save()
-            for tag_title in ask_form.cleaned_data['tag_list'].split():
-                tag = models.Tag(title = tag_title)
-                try:
-                    tag.save()
-                    question.tags.add(tag)
-                except IntegrityError:
-                    pass
-            return redirect(reverse("index"), question_id=question.id)
-    context = get_shared_context()
-    context['form'] = ask_form
+            add_tags_to_question(ask_form.cleaned_data['tag_list'], question)
+            return redirect(reverse("question", args = [question.id]))
+            # почему работает?
+            # return redirect("question", question_id=question.id)
+    context = { 'best_items' : get_best_items(), 'form' : ask_form }
     return render(request, "ask.html", context=context)
+
 
 def login(request):
     if request.method == 'GET':
+        if request.user.is_authenticated:
+            url = request.GET.get('continue', '/')
+            return HttpResponseRedirect(url)
         login_form = forms.LoginForm()
     elif request.method == 'POST':
         login_form = forms.LoginForm(request.POST)
@@ -131,59 +163,60 @@ def login(request):
             user = auth.authenticate(request, **login_form.cleaned_data)
             if user:
                 auth.login(request, user)
-                return redirect(reverse("index"))
+                # return HttpResponseRedirect(reverse(viewname="register", kwargs={'continue' : '/'}))
+                return redirect(reverse(viewname="login") + "?continue=/")
             else:
                 login_form.add_error(None, "Username or password is incorrect")
-    context = get_shared_context()
-    context['form'] = login_form
+    context = { 'best_items' : get_best_items(), 'form' : login_form }
     return render(request, "login.html", context=context)
+
 
 def register(request):
     if request.method == 'GET':
         reg_form = forms.RegistrationForm()
     elif request.method == 'POST':
-        reg_form = forms.RegistrationForm(request.POST)
+        reg_form = forms.RegistrationForm(data = request.POST, files = request.FILES)
         if reg_form.is_valid():
             user = reg_form.save()
             if user:
+                # avatar = None ?
                 auth.login(request, user)
-                return redirect(reverse("index"))
+                models.Profile.objects.create(user = user, avatar = reg_form.cleaned_data['avatar'])
+                return redirect(reverse(viewname="index"))
             else:
                 reg_form.add_error(None, "User saving error")
-    context = get_shared_context()
-    context['form'] = reg_form
+    context = { 'best_items' : get_best_items(), 'form' : reg_form }
     return render(request, "register.html", context=context)
 
-@login_required
+
+# @login_required
 def settings(request):
+    if not request.user.is_authenticated:
+        return redirect(reverse("login"))
     if request.method == 'GET':
         dict_model_fields = model_to_dict(request.user)
         # инициализация формы существующими значениями
         user_form = forms.SettingsForm(initial=dict_model_fields)
     elif request.method == 'POST':
-        print("request.POST = ", request.POST)
-        print("request.POST = ", request)
         user_form = forms.SettingsForm(data=request.POST, instance = request.user)
         if user_form.is_valid():
             user_form.save()
             return redirect(reverse("settings"))
-    context = get_shared_context()
-    context['form'] = user_form
+    context = { 'best_items' : get_best_items(), 'form' : user_form }
     return render(request, "settings.html", context=context)
+
 
 def logout(request):
     auth.logout(request)
-    return login(request)
+    return redirect(request.META['HTTP_REFERER'])
+
 
 def tag(request, tag_id : int):
     if not models.Tag.objects.filter(pk=tag_id).exists():
-        return HttpResponseNotFound('<h1>Page not found</h1>')
+        return get_response_404()
     
     questions = models.Question.objects.get_questions_by_tag(tag_id)
     page = paginate(questions, request)
-    context = get_shared_context()
-    context['question'] = questions
-    context['tag'] = context['tag'] = models.Tag.objects.get(id=tag_id).title
-    context['page'] = page
+    tag = models.Tag.objects.get(id=tag_id).title
+    context = { 'best_items' : get_best_items(), 'question' : questions, 'tag' :  tag, 'page' : page }
     return render(request, "tag.html", context=context)
-

@@ -8,12 +8,13 @@ class LoginForm(forms.Form):
 
 
 class RegistrationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    password_repeat = forms.CharField(widget=forms.PasswordInput)
-    # avatar = forms.FileField()
+    password = forms.CharField(widget=forms.PasswordInput, required=True)
+    password_repeat = forms.CharField(widget=forms.PasswordInput, required=True)
+    avatar = forms.FileField(widget=forms.FileInput, required=False)
     class Meta:
+        model = models.Profile
         model = models.User
-        fields = ['username', 'first_name', 'last_name', 'email', 'password', 'password_repeat']
+        fields = ['username', 'first_name', 'last_name', 'email', 'password', 'password_repeat', 'avatar']
 
     def clean(self):                    
         password = self.cleaned_data['password']
@@ -24,29 +25,33 @@ class RegistrationForm(forms.ModelForm):
             raise forms.ValidationError("Passwords do not match")
         return self.cleaned_data
     def save(self):
-        self.cleaned_data.pop('password_repeat')
+        cleaned_data = self.cleaned_data.copy()
+        cleaned_data.pop('password_repeat')
+        cleaned_data.pop('avatar')
         try:
-            return models.User.objects.create_user(**self.cleaned_data)
+            return models.User.objects.create_user(**cleaned_data)
         except IntegrityError:
             # пользователь уже существует
             return None
-        # создаем Profile, привязываем к юзеру, добавляем аву
 
 class SettingsForm(forms.ModelForm):
-    # avatar = forms.FileField()
+    avatar = forms.FileField(widget=forms.FileInput(), required=False)
     class Meta:
         model = models.User
         fields = ['username', 'email', 'first_name', 'last_name']
     # save from super class
 
 class AskForm(forms.ModelForm):
-    tag_list = forms.CharField()
+    tag_list = forms.CharField(required=False)
+    title = forms.CharField(widget = forms.TextInput(), required=True)
+    text = forms.CharField(widget = forms.Textarea(attrs={"rows" : "3"}))
     # avatar = forms.FileField()
     class Meta:
         model = models.Question
         fields = ['title', 'text', 'tag_list']
 
 class AnswerForm(forms.ModelForm):
+    text = forms.CharField(widget = forms.Textarea(attrs={"rows" : "3"}), label="Text answer", required=True)
     class Meta:
         model = models.Answer
         fields = ['text']
