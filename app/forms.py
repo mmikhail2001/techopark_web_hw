@@ -35,11 +35,19 @@ class RegistrationForm(forms.ModelForm):
             return None
 
 class SettingsForm(forms.ModelForm):
-    avatar = forms.FileField(widget=forms.FileInput(), required=False)
+    avatar = forms.FileField(widget=forms.FileInput(), required=False, label="New avatar")
     class Meta:
         model = models.User
-        fields = ['username', 'email', 'first_name', 'last_name']
-    # save from super class
+        fields = ['username', 'email', 'first_name', 'last_name', 'avatar']
+    def save(self):
+        user = super().save()
+        
+        profile = user.profile
+        if self.cleaned_data['avatar']:
+            profile.avatar = self.cleaned_data['avatar']
+        profile.save()
+        
+        return user
 
 class AskForm(forms.ModelForm):
     tag_list = forms.CharField(required=False)

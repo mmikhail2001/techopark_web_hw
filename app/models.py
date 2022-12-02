@@ -35,7 +35,7 @@ class AnswerManager(models.Manager):
 # user's pass: 1Q2w3e4r5t_
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
-    avatar = models.ImageField(blank=True, null=True, upload_to="avatars/")
+    avatar = models.ImageField(blank=True, null=True, default='avatars/common_avatar.png', upload_to="avatars/%Y/%m/%d")
 
     objects = ProfileManager()
     

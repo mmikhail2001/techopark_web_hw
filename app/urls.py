@@ -1,5 +1,7 @@
 from app import views
 from django.urls import path
+from django.conf.urls.static import static
+from askme import settings
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -11,4 +13,10 @@ urlpatterns = [
     path('logout', views.logout, name='logout'),
     path('settings', views.settings, name='settings'),
     path('tag/<int:tag_id>', views.tag, name='tag'),
+    path('like/', views.like, name='like'),
+    path('like_answer/', views.like_answer, name='like_answer'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root = settings.STATICFILES_DIRS[0]) \
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

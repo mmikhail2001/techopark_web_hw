@@ -11,10 +11,11 @@
         <div class="row">
             <!-- Likes and answers counters -->
             <div class="col-2 text-end">
-                <form class="mb-1">
-                    <input type="hidden">
-                    <button class="fs-3 button-likes" type="submit">{{ question.like_set.all.count }}</button>
-                </form>
+                    {% if question|isLikeUp:request.user.profile %}
+                        <button class="fs-3 button-likes like-question like-up" data-id="{{question.id}}">{{ question.like_set.all.count }}</button>
+                    {% else %}
+                        <button class="fs-3 button-likes like-question" data-id="{{question.id}}">{{ question.like_set.all.count }}</button>
+                    {% endif %}
             </div>
 
             <!-- Question main part -->
@@ -41,8 +42,7 @@
         </div>
         <div class="row m-2 mx-4">
                 <div class="text-end mt-3">
-                    <img src="../static/img/common_avatar.png" alt="Avatar" width="50"
-                    height="50">
+                    <img src="{{ question.author.user.profile.avatar.url }}" style="object-fit: cover" alt="Avatar" width="70" height="70">
                     <a href="#" class="member-miniature"><strong>{{question.author.user.username}}</strong></a>
                     asked {{ question.date|convert_date }} ago 
                 </div>

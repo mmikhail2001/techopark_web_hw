@@ -22,6 +22,17 @@ nav {
     padding: 8px 12px;
 }
 
+.like-up {
+    background-color:#ffcee1;
+}
+
+.upper-anchor {
+    padding-top: 80px;
+	margin-top: -80px;
+	-webkit-background-clip: content-box;
+	background-clip: content-box;
+}
+
 .button-likes:before {
     content: "";
     background-image: url("../img/like-2.png");

@@ -2,7 +2,7 @@ from django.conf import Settings
 from django.db import IntegrityError
 from django.forms import model_to_dict
 from django.shortcuts import redirect, render
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 from django.core.paginator import Paginator
@@ -37,13 +37,21 @@ from django.contrib import auth
     - добавить лайк на ответ (сортировка ответов по рейтингу)
     
     Задачи 2
-    - аватарка
-    - лайк к ответу
-    - сортировка ответом по лайкам, при равном количестве лайков по дате
+    + аватарка
+    + лайк к ответу
+    + сортировка ответом по лайкам, при равном количестве лайков по дате
     - пагинация при одной странице должна отсутсвовать
     - секунды, прошедшие с момента отправки ответа или вопроса, не должна содержать десятые доли
         - 4.34 ago, 6.4 ago (либо две цифры после точки, либо одна)
         - нужно пофиксить 
+
+    Задачи 3
+    - Пользователь не может удалить аватарку, добавить галочку в настройках
+    - добавить отображение правильного ответа
+        - не автор вопроса и не зарегестрированный юзер не может взаимодейстовать с этой кнопкой
+    - обработка на js лайк от незарегестрированного пользователя
+
+    ? добавить дизлайк
 '''
 
 COUNT_BEST_ITEMS = 10
@@ -193,7 +201,12 @@ def register(request):
             if user:
                 # avatar = None ?
                 auth.login(request, user)
-                models.Profile.objects.create(user = user, avatar = reg_form.cleaned_data['avatar'])
+                if reg_form.cleaned_data['avatar']:
+                    models.Profile.objects.create(user = user, avatar = reg_form.cleaned_data['avatar'])
+                else:
+                    models.Profile.objects.create(user = user)
+                    
+                # models.Profile.objects.create(user = user)
                 return redirect(reverse(viewname="index"))
             else:
                 reg_form.add_error(None, "User saving error")
@@ -208,7 +221,7 @@ def settings(request):
         # инициализация формы существующими значениями
         user_form = forms.SettingsForm(initial=dict_model_fields)
     elif request.method == 'POST':
-        user_form = forms.SettingsForm(data=request.POST, instance = request.user)
+        user_form = forms.SettingsForm(data=request.POST, files = request.FILES, instance = request.user)
         if user_form.is_valid():
             user_form.save()
             return redirect(reverse("settings"))
@@ -230,6 +243,32 @@ def tag(request, tag_id : int):
     tag = models.Tag.objects.get(id=tag_id).title
     context = { 'best_items' : get_best_items(), 'question' : questions, 'tag' :  tag, 'page' : page }
     return render(request, "tag.html", context=context)
+
+@login_required(login_url = "login")
+def like(request):
+    question_id = request.POST['question_id']
+    question = models.Question.objects.get(id = question_id)
+    like = models.Like.objects.filter(question = question, author = request.user.profile).first()
+    if not like:
+        like = models.Like(question = question, author = request.user.profile)
+        like.save()
+    else:
+        models.Like.objects.get(id = like.id).delete()
+        
+    return JsonResponse({"count_likes" : question.like_set.all().count() })
+
+@login_required(login_url = "login")
+def like_answer(request):
+    answer_id = request.POST['answer_id']
+    answer = models.Answer.objects.get(id = answer_id)
+    like = models.LikeAnswer.objects.filter(answer = answer, author = request.user.profile).first()
+    if not like:
+        like = models.LikeAnswer(answer = answer, author = request.user.profile)
+        like.save()
+    else:
+        models.LikeAnswer.objects.get(id = like.id).delete()
+        
+    return JsonResponse({"count_likes_answer" : answer.likeanswer_set.all().count() })
 
 # Замечания
 # для перенаправления на изначальную страницу после нажатия login

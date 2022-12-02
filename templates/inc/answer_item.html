@@ -2,10 +2,11 @@
 
 <div class="card mt-2">
     <!-- Question -->
+    <div class="upper-anchor" id="{{ answer.id }}"> </div>
     <div class="card-body"">
         <div class="row">
             <div class="col ps-4">
-                <div id="{{ answer.id }}" class="col-8">
+                <div  class="col-8">
                     <form class="mb-1">
                         {% if answer.is_correct %}
                         {% comment %} {% if True %} {% endcomment %}
@@ -23,17 +24,16 @@
                 </div>
                 <div class="row">
                     <div class="col-2 text-end">
-                        <form class="mb-1">
-                            <input type="hidden">
-                            {% comment %} {% if answer.likeanswer_set.filter(author.user = request.user) %} {% endcomment %}
-                            <button class="fs-3 button-likes" type="submit">{{ answer.likeanswer_set.all.count }}</button>
-                        </form>
+                        {% if answer|isLikeUpAnswer:request.user.profile %}
+                            <button class="fs-3 button-likes like-answer like-up" data-id="{{answer.id}}">{{ answer.likeanswer_set.all.count }}</button>
+                        {% else %}
+                            <button class="fs-3 button-likes like-answer" data-id="{{answer.id}}">{{ answer.likeanswer_set.all.count }}</button>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row m-2 mx-4">
                     <div class="text-end mt-3">
-                        <img src="../static/img/common_avatar.png" alt="Avatar" width="50"
-                        height="50">
+                        <img src="{{ answer.author.user.profile.avatar.url }}" style="object-fit: cover" alt="Avatar" width="40" height="40">
                     <a href="#" class="member-miniature"><strong>{{answer.author.user.username}}</strong></a>
                         answered {{ answer.date|convert_date }} ago 
                     </div>

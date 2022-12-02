@@ -47,7 +47,7 @@
                     
                     <!-- Name section -->
                     {% if request.user.is_authenticated %}
-                    <img src="{% static "img/common_avatar.png" %}" alt="Avatar" width="70" height="70">
+                    <img src="{{ request.user.profile.avatar.url }}" style="object-fit: cover" alt="Avatar" width="70" height="70">
                     <div class="container">
                         <div class="row">
                             <div class="col">
@@ -120,7 +120,7 @@
                     <div class="col">
                         {% for profile in best_items.profiles %}
                             <div class="m-3">
-                                <img src="{% static "img/common_avatar.png" %}" alt="Avatar" width="50">
+                                <img src="{{ profile.avatar.url }}" style="object-fit: cover" alt="Avatar" width="70" height="70">
                                 <a href="#" class="member-miniature"> {{ profile.user.username }} </a>
                             </div>
                         {% endfor %}
@@ -137,7 +137,11 @@
         <span class="text-muted">Subscribe to us!</span>
     </div>
 </footer>
-
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="{%static "js/main.js"%}"></script>
+    <script>
+        var csrftoken = '{{ csrf_token }}';
+    </script>
 </body>
 </html>
 

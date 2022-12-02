@@ -7,9 +7,11 @@
 {% bootstrap_messages %}
 
 
-<form action="{% url 'settings' %}" method="post" class="form">
+<form action="{% url 'settings' %}" method="post" class="form" enctype="multipart/form-data">
     {% csrf_token %}
     {% bootstrap_form form %}
+    <p class="form-label">Current avatar</p>
+    <img src="{{request.user.profile.avatar.url}}" width="400px" alt="Avatar">
     {% buttons %}
         <button type="submit" class="my-3 btn btn-primary">Save</button>
     {% endbuttons %}
