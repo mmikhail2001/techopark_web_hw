@@ -9,7 +9,8 @@ class QuestionManager(models.Manager):
         return self.order_by('-date')
     
     def get_hot_questions(self):
-        q_sort_by_likes = self.annotate(Count('like')).order_by('-like__count')
+        # сортировка по количеству лайков, при равном количестве по дате
+        q_sort_by_likes = self.annotate(Count('like')).order_by('-like__count', '-date')
         return q_sort_by_likes
     
     def get_questions_by_tag(self, idx):
@@ -26,6 +27,9 @@ class ProfileManager(models.Manager):
         p_sort_by_questions = self.annotate(Count('question')).order_by('-question__count')
         return p_sort_by_questions
 
+class AnswerManager(models.Manager):
+    def get_sort_answers(self):
+        return self.annotate(Count('likeanswer')).order_by('-likeanswer__count', '-date')
     
 
 # user's pass: 1Q2w3e4r5t_
@@ -68,9 +72,12 @@ class Answer(models.Model):
     author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
     question    = models.ForeignKey(Question, on_delete=models.CASCADE)
     
+    objects = AnswerManager()
+    
     def __str__(self):
         return f'Answer #{self.pk}. {self.text[:10]}'
     
+# Like for the Question
 class Like(models.Model):
     question    = models.ForeignKey(Question, on_delete=models.CASCADE)
     author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
@@ -80,3 +87,11 @@ class Like(models.Model):
     def __str__(self):
         return f'Like: {self.author.user.username} -> {self.question.title}'
                                                                 
+class LikeAnswer(models.Model):
+    answer      = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    author      = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('answer', 'author')
+    
+    def __str__(self):
+        return f'Like: {self.author.user.username} -> {self.answer}'

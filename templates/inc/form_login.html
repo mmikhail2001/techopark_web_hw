@@ -6,7 +6,7 @@
 
 {% bootstrap_messages %}
 
-<form action="{% url 'login' %}" method="post" class="form">
+<form action="{% url 'login' %}?continue={{request.GET.continue}}" method="post" class="form">
     {% csrf_token %}
     {% bootstrap_form form %}
     {% buttons %}

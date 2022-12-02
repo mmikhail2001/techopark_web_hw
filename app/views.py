@@ -1,3 +1,4 @@
+from django.conf import Settings
 from django.db import IntegrityError
 from django.forms import model_to_dict
 from django.shortcuts import redirect, render
@@ -7,6 +8,8 @@ from django.views.decorators.http import require_GET
 from django.core.paginator import Paginator
 from app import forms
 from django.contrib.auth.decorators import login_required
+
+from askme import settings
 from . import models
 
 from datetime import datetime, timezone, timedelta
@@ -118,7 +121,8 @@ def question(request, question_id : int):
             answer_id = answer.id
             
             # дублирование, т.к. при GET запросе новый ответ не добавляется
-            answers = needed_question.answer_set.all().order_by('date')
+            # answers = needed_question.answer_set.all().order_by('date')
+            answers = needed_question.answer_set.get_sort_answers()
             page = paginate(answers, request)
             
             # получаем номер страницы, на которой разместился новый вопрос
@@ -126,12 +130,13 @@ def question(request, question_id : int):
             # скроллинг по якорю: <div id="{{answer_id"}}"> </div>
             return redirect(reverse("question", args = [question_id]) + f'?page={num_page}#{answer_id}')
 
-    answers = needed_question.answer_set.all().order_by('date')
+    answers = needed_question.answer_set.get_sort_answers()
     page = paginate(answers, request)
     context = { 'best_items' : get_best_items(), 'page' : page, 'question' : needed_question, 'form' : answer_form }
     return render(request, "question.html", context=context)
 
-@login_required
+# settings.LOGIN_URL
+@login_required(login_url = "login", redirect_field_name=settings.REDIRECT_FIELD_NAME)
 def ask(request):
     if request.method == 'GET':
         ask_form = forms.AskForm()
@@ -154,17 +159,24 @@ def ask(request):
 def login(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
+            print("request.GET 1 = ", request.GET)
             url = request.GET.get('continue', '/')
+            # if not url:
+            #     url = '/'
             return HttpResponseRedirect(url)
         login_form = forms.LoginForm()
+        print("request.GET 2 = ", request.GET)
     elif request.method == 'POST':
         login_form = forms.LoginForm(request.POST)
         if login_form.is_valid():
             user = auth.authenticate(request, **login_form.cleaned_data)
             if user:
                 auth.login(request, user)
+                print("request.POST = ", request.POST)
+                print("request.POST_GET = ", request.GET)
                 # return HttpResponseRedirect(reverse(viewname="register", kwargs={'continue' : '/'}))
-                return redirect(reverse(viewname="login") + "?continue=/")
+                
+                return redirect(reverse(viewname="login") + "?continue=" + request.GET.get('continue', '/'))
             else:
                 login_form.add_error(None, "Username or password is incorrect")
     context = { 'best_items' : get_best_items(), 'form' : login_form }
@@ -189,10 +201,8 @@ def register(request):
     return render(request, "register.html", context=context)
 
 
-# @login_required
+@login_required(login_url = "login", redirect_field_name=settings.REDIRECT_FIELD_NAME)
 def settings(request):
-    if not request.user.is_authenticated:
-        return redirect(reverse("login"))
     if request.method == 'GET':
         dict_model_fields = model_to_dict(request.user)
         # инициализация формы существующими значениями
@@ -220,3 +230,10 @@ def tag(request, tag_id : int):
     tag = models.Tag.objects.get(id=tag_id).title
     context = { 'best_items' : get_best_items(), 'question' : questions, 'tag' :  tag, 'page' : page }
     return render(request, "tag.html", context=context)
+
+# Замечания
+# для перенаправления на изначальную страницу после нажатия login
+
+# login.html    : <form action="{% url 'login' %}?continue={{request.GET.continue}}" method="post" class="form"> 
+# question.html : <a href="{% url "login" %}?continue={{request.path}}" class="btn btn-outline-warning"> Войдите в систему </a>
+# base.html     : href="{% url "login" %}?continue={{request.path}}
