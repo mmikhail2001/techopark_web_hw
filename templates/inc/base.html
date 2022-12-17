@@ -47,6 +47,8 @@
                     
                     <!-- Name section -->
                     {% if request.user.is_authenticated %}
+                    {% comment %} hidden тег для чтения из js для устранения ошибок при лайке {% endcomment %}
+                    <div hidden id="user-is-logged">yes</div>
                     <img src="{{ request.user.profile.avatar.url }}" style="object-fit: cover" alt="Avatar" width="70" height="70">
                     <div class="container">
                         <div class="row">
@@ -74,7 +76,7 @@
                         </div>
                     </div>
                     {% else %}
-
+                        <div hidden id="user-is-logged">no</div>
                         <div class="col">
                             <a href="{% url 'login' %}?continue={{request.path}}" class="link-secondary fs-6 px-2">Log in</a>
                         </div>

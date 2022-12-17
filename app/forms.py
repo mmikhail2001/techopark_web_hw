@@ -36,15 +36,20 @@ class RegistrationForm(forms.ModelForm):
 
 class SettingsForm(forms.ModelForm):
     avatar = forms.FileField(widget=forms.FileInput(), required=False, label="New avatar")
+    Delete_avatar = forms.BooleanField(required=False)
     class Meta:
         model = models.User
         fields = ['username', 'email', 'first_name', 'last_name', 'avatar']
     def save(self):
         user = super().save()
-        
+        print("self.cleaned_data = ", self.cleaned_data)
         profile = user.profile
         if self.cleaned_data['avatar']:
             profile.avatar = self.cleaned_data['avatar']
+        if self.cleaned_data['Delete_avatar']:
+            profile.avatar.delete(save=False)
+            # хард-код в двух местах...
+            profile.avatar = 'avatars/common_avatar.png'
         profile.save()
         
         return user

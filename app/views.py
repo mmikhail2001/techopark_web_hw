@@ -20,7 +20,7 @@ from django.contrib import auth
 '''
     Задачи 1
     + Логин создает юзера, а нужно профиль
-    - аватарка
+    + аватарка
     + В settings добавить аватарку
     + textArea вопроса слишком большой
     + декомпозировать контроллеры
@@ -46,12 +46,16 @@ from django.contrib import auth
         - нужно пофиксить 
 
     Задачи 3
-    - Пользователь не может удалить аватарку, добавить галочку в настройках
-    - добавить отображение правильного ответа
-        - не автор вопроса и не зарегестрированный юзер не может взаимодейстовать с этой кнопкой
-    - обработка на js лайк от незарегестрированного пользователя
-
+    + Пользователь не может удалить аватарку, добавить галочку в настройках
+    + добавить отображение правильного ответа
+        + не автор вопроса не может взаимодейстовать с этой кнопкой
+        + при нажатии лайка или correct от неавторизованного, возникает ошибка в js
+    + обработка на js лайк от незарегестрированного пользователя
+    + сортировка ответов с учетом correct
+    + автор вопроса отмечает один ответ корректным
+    
     ? добавить дизлайк
+    ? при удалении вопроса теги не удаляются, что делать с зомби-тегами
 '''
 
 COUNT_BEST_ITEMS = 10
@@ -221,6 +225,10 @@ def settings(request):
         # инициализация формы существующими значениями
         user_form = forms.SettingsForm(initial=dict_model_fields)
     elif request.method == 'POST':
+        print("request.POST >> ", request.POST)
+        print("request.GET >> ", request.GET)   
+        print("request.POST.Delete_avatar.... >> ", request.POST.get('Delete_avatar', 'off'))
+        # print("request.POST.Delete_avatar[0].... >> ", request.POST.Delete_avatar[0])
         user_form = forms.SettingsForm(data=request.POST, files = request.FILES, instance = request.user)
         if user_form.is_valid():
             user_form.save()
@@ -269,6 +277,44 @@ def like_answer(request):
         models.LikeAnswer.objects.get(id = like.id).delete()
         
     return JsonResponse({"count_likes_answer" : answer.likeanswer_set.all().count() })
+
+def get_answer_correct(question):
+    for answer in question.answer_set.all():
+        if answer.is_correct:
+            return answer
+    return False
+
+@login_required(login_url = "login")
+def correct(request):
+    # авторизация проверяется на уровне js
+    # запрос не приходит от неавторизированных пользователей
+    print(request.POST)
+    answer_id = request.POST['answer_id']
+    answer = models.Answer.objects.get(id = answer_id)
+    question = answer.question
+    
+    # ищем старый правильный ответ, убираем отметку о правильности
+    # устанавливаем отметку на новом ответе
+    if question.author.user == request.user:
+        old_answer_correct = get_answer_correct(question)
+        if old_answer_correct:
+            if old_answer_correct == answer:
+                answer.is_correct = False
+            else:
+                old_answer_correct.is_correct = False
+                answer.is_correct = True
+            old_answer_correct.save()
+        else:
+            answer.is_correct = True
+        answer.save()
+        return JsonResponse({
+                "status" : True, 
+                "correct" : answer.is_correct, 
+                "old_answer_id" : f'{old_answer_correct.id}' if old_answer_correct else False
+            })
+    else:
+        return JsonResponse({"status" : False })
+
 
 # Замечания
 # для перенаправления на изначальную страницу после нажатия login

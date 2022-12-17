@@ -29,7 +29,7 @@ class ProfileManager(models.Manager):
 
 class AnswerManager(models.Manager):
     def get_sort_answers(self):
-        return self.annotate(Count('likeanswer')).order_by('-likeanswer__count', '-date')
+        return self.annotate(Count('likeanswer')).order_by('-is_correct', '-likeanswer__count', '-date')
     
 
 # user's pass: 1Q2w3e4r5t_

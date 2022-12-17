@@ -2,6 +2,7 @@
 
 <div class="card mt-2">
     <!-- Question -->
+    {% comment %} иначе footer загораживает...  {% endcomment %}
     <div class="upper-anchor" id="{{ answer.id }}"> </div>
     <div class="card-body"">
         <div class="row">
@@ -9,14 +10,13 @@
                 <div  class="col-8">
                     <form class="mb-1">
                         {% if answer.is_correct %}
-                        {% comment %} {% if True %} {% endcomment %}
-                            <button type="button" class="btn btn-success">  Correct </button>
+                            <div type="button" class="correct-button btn btn-success" id="{{answer.id}}" data-id="{{answer.id}}"> Correct </div>
                         {% else %}
-                            <button type="button" class="btn btn-light">    Correct </button>
+                            <div type="button" class="correct-button btn btn-light" id="{{answer.id}}" data-id="{{answer.id}}"> Correct </div>
                         {% endif %}
+                        {% comment %} button долго прожимается {% endcomment %}
                     </form>
                 </div>
-                {% comment %} <div class="row p-1" id="{{ answer.id }}"> {% endcomment %}
                 <div class="row p-1">
                     <p>
                         {{ answer.text }}  

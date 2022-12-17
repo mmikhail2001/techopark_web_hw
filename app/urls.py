@@ -15,6 +15,7 @@ urlpatterns = [
     path('tag/<int:tag_id>', views.tag, name='tag'),
     path('like/', views.like, name='like'),
     path('like_answer/', views.like_answer, name='like_answer'),
+    path('correct/', views.correct, name='correct'),
 ]
 
 if settings.DEBUG:
