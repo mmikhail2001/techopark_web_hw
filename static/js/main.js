@@ -1,8 +1,14 @@
+// I got this error when I visited http://127.0.0.1:8000 in my browser but used fetch('http://localhost:8000'); in my JavaScript code. The solution is to use either 127.0.0.1 or localhost but not mix them.
+ 
+// Если на сайт заходим с localhost, а AJAX запросы на 127.0.0.1 - CORS Policy ругается
+
 const not_auth = "You are not authorized"
 
 $(".like-question").on('click', function(ev){
+    console.log("1")
     if ($("#user-is-logged").text() == 'yes')
     {
+        console.log("2")
         const request = new Request(
             'http://127.0.0.1:8000/like/',
             {
@@ -15,10 +21,11 @@ $(".like-question").on('click', function(ev){
                 body: 'question_id=' + $(this).data('id')
             }
         )
-
+        
         fetch(request).then(
             response => response.json().then(
                 (response) => {
+                    console.log("3")
                     const old_count_likes = $(this).text(); 
                     $(this).text(response.count_likes);
                     const new_count_likes = $(this).text();

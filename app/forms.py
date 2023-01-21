@@ -24,6 +24,7 @@ class RegistrationForm(forms.ModelForm):
             self.add_error('password_repeat', error='')                          
             raise forms.ValidationError("Passwords do not match")
         return self.cleaned_data
+    # возвращает сущность которую сохраняет
     def save(self):
         cleaned_data = self.cleaned_data.copy()
         cleaned_data.pop('password_repeat')
@@ -42,14 +43,13 @@ class SettingsForm(forms.ModelForm):
         fields = ['username', 'email', 'first_name', 'last_name', 'avatar']
     def save(self):
         user = super().save()
-        print("self.cleaned_data = ", self.cleaned_data)
         profile = user.profile
         if self.cleaned_data['avatar']:
             profile.avatar = self.cleaned_data['avatar']
         if self.cleaned_data['Delete_avatar']:
             profile.avatar.delete(save=False)
-            # хард-код в двух местах...
             profile.avatar = 'avatars/common_avatar.png'
+        # обновление полей
         profile.save()
         
         return user

@@ -56,6 +56,9 @@ from django.contrib import auth
     
     ? добавить дизлайк
     ? при удалении вопроса теги не удаляются, что делать с зомби-тегами
+    
+    Задачи 4
+    + Теги каждый раз добавляются новые в базу
 '''
 
 COUNT_BEST_ITEMS = 10
@@ -77,14 +80,16 @@ def get_best_items():
 def get_response_404():
     return HttpResponseNotFound('<h1>Page not found</h1>')
 
+# нет поиска существующего тега
 def add_tags_to_question(tags, question):
     for tag_title in tags.split(','):
-        tag = models.Tag(title = tag_title)
-        try:
+        existing_tag = models.Tag.objects.filter(title = tag_title)
+        if existing_tag.exists():
+            question.tags.add(existing_tag.first())
+        else:
+            tag = models.Tag(title = tag_title)
             tag.save()
             question.tags.add(tag)
-        except IntegrityError:
-            pass
 
 def get_num_page_by_id(paginator, id):
     for i in paginator.page_range:
@@ -162,8 +167,6 @@ def ask(request):
             question.save()
             add_tags_to_question(ask_form.cleaned_data['tag_list'], question)
             return redirect(reverse("question", args = [question.id]))
-            # почему работает?
-            # return redirect("question", question_id=question.id)
     context = { 'best_items' : get_best_items(), 'form' : ask_form }
     return render(request, "ask.html", context=context)
 
@@ -171,10 +174,7 @@ def ask(request):
 def login(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
-            print("request.GET 1 = ", request.GET)
             url = request.GET.get('continue', '/')
-            # if not url:
-            #     url = '/'
             return HttpResponseRedirect(url)
         login_form = forms.LoginForm()
         print("request.GET 2 = ", request.GET)
@@ -184,8 +184,6 @@ def login(request):
             user = auth.authenticate(request, **login_form.cleaned_data)
             if user:
                 auth.login(request, user)
-                print("request.POST = ", request.POST)
-                print("request.POST_GET = ", request.GET)
                 # return HttpResponseRedirect(reverse(viewname="register", kwargs={'continue' : '/'}))
                 
                 return redirect(reverse(viewname="login") + "?continue=" + request.GET.get('continue', '/'))
@@ -225,10 +223,6 @@ def settings(request):
         # инициализация формы существующими значениями
         user_form = forms.SettingsForm(initial=dict_model_fields)
     elif request.method == 'POST':
-        print("request.POST >> ", request.POST)
-        print("request.GET >> ", request.GET)   
-        print("request.POST.Delete_avatar.... >> ", request.POST.get('Delete_avatar', 'off'))
-        # print("request.POST.Delete_avatar[0].... >> ", request.POST.Delete_avatar[0])
         user_form = forms.SettingsForm(data=request.POST, files = request.FILES, instance = request.user)
         if user_form.is_valid():
             user_form.save()
