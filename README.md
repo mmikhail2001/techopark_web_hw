@@ -1,2 +1,1 @@
-# techopark_web_hw
-Домашние работы по дисциплине "Web-технологии" в Технопарке. 
+# askme_myadelets
